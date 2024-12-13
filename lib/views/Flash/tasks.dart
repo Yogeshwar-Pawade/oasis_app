@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/task.dart';
-import '../utils/db_helper.dart';
+import '/models/task.dart';
+import '/utils/db_helper.dart';
 
 class TaskDetailsScreen extends StatefulWidget {
   final String username;

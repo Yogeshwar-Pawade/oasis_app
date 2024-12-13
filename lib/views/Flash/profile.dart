@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../models/user_profile.dart';
-import '../utils/api_service.dart';
-import '../utils/db_helper.dart';
-import '../utils/session_manager.dart';
-import 'login_screen.dart';
+import '/models/user_profile.dart';
+import '/utils/api_service.dart';
+import '/utils/db_helper.dart';
+import '/utils/session_manager.dart';
+import '../login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'utils/api_service.dart';
-import 'views/viewchat.dart';
-import 'views/view_taskdetails.dart';
-import 'views/viewprofile.dart';
+import './views/Oasis/chats.dart';
+import './views/Flash/tasks.dart';
+import './views/Flash/profile.dart';
 import 'views/login_screen.dart';
 import 'views/signup_screen.dart';
 import 'utils/session_manager.dart';
