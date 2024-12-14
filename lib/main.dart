@@ -1,12 +1,14 @@
+import 'dart:ui'; // Required for BackdropFilter
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'utils/api_service.dart';
 import './views/Oasis/chats.dart';
 import './views/Flash/tasks.dart';
-import './views/Flash/profile.dart';
 import 'views/login_screen.dart';
 import 'views/signup_screen.dart';
 import 'utils/session_manager.dart';
+import '/conf/theme.dart';
+import 'conf/frostedglass.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,12 +45,6 @@ class _MainScreenState extends State<MainScreen> {
   String? _userName;
   String? _userEmail;
 
-  final List<String> _titles = [
-    "Chat",
-    "Task Details",
-    "Profile",
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -58,8 +54,6 @@ class _MainScreenState extends State<MainScreen> {
   void _fetchUserDetails() async {
     try {
       final userdetails = await _apiService.getUserProfile();
-
-      // Update state with user details
       setState(() {
         _userName = userdetails['name'] ?? 'Unknown User';
         _userEmail = userdetails['email'] ?? 'No Email Provided';
@@ -73,82 +67,108 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
-      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_userName == null) {
-      // Show a loading indicator while fetching user details
       return Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final height = MediaQuery.of(context).size.height;
     final List<Widget> _screens = [
       ChatScreen(taskData: [], userName: _userName ?? 'Unknown User Name'),
       TaskDetailsScreen(username: _userName ?? 'Unknown User'),
-      ProfileScreen(),
     ];
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: _screens[_currentIndex],
-      bottomNavigationBar: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            height: height * 0.1,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNavBarItem(icon: Icons.chat, index: 0),
-                _buildNavBarItem(icon: Icons.list, index: 1),
-                _buildNavBarItem(icon: Icons.person, index: 2),
-              ],
-            ),
+      bottomNavigationBar: Glassmorphism(
+        blur: 80.0,
+        opacity: 0.4,
+        radius: 30.0, // Rounded corners
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical:
+                MediaQuery.of(context).size.height * 0.015, // Reduced padding
           ),
-        ],
+          height: MediaQuery.of(context).size.height * 0.1, // Reduced height
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildNavBarButton(
+                label: "Oasis",
+                index: 0,
+                context: context,
+              ),
+              SizedBox(
+                width:
+                    MediaQuery.of(context).size.width * 0.06, // Reduced spacing
+              ),
+              _buildNavBarButton(
+                label: "Flash",
+                index: 1,
+                context: context,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildNavBarItem({required IconData icon, required int index}) {
+  Widget _buildNavBarButton({
+    required String label,
+    required int index,
+    required BuildContext context,
+  }) {
     final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-        alignment: Alignment.center,
-        transform: isSelected
-            ? Matrix4.translationValues(0, -30, 0)
-            : Matrix4.identity(),
-        width: isSelected ? 60 : 40,
-        height: isSelected ? 60 : 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? Colors.black : Colors.transparent,
-          border: isSelected
-              ? Border.all(
-                  color: const Color.fromARGB(255, 243, 230, 178), width: 4)
-              : null,
-        ),
-        child: Icon(
-          icon,
-          size: isSelected ? 30 : 28,
-          color: isSelected ? const Color(0xFFFFCD03) : const Color(0xFF888888),
+
+    final double buttonWidth =
+        MediaQuery.of(context).size.width * (isSelected ? 0.40 : 0.25);
+    final double buttonheight =
+        MediaQuery.of(context).size.height * (isSelected ? 0.08 : 0.06);
+
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 100),
+      curve: Curves.easeInOut,
+      width: buttonWidth,
+      height: buttonheight,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: MediaQuery.of(context).size.height * 0.002,
+            horizontal: MediaQuery.of(context).size.width * 0.02,
+          ),
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).size.height * 0.01,
+          ),
+          decoration: BoxDecoration(
+              border:
+                  Border.all(width: 1, color: Colors.white.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(18),
+              color: isSelected
+                  ? darkPrimaryColor // Solid primary color for selected button
+                  // : const Color.fromARGB(255, 58, 58, 58), // Solid light gray for unselected button
+                  : Colors.transparent),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white, // Text color
+                fontSize: isSelected ? 16 : 14, // Font size
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ),
     );

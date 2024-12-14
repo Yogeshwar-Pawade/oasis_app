@@ -3,6 +3,8 @@ import '/models/chat_message.dart';
 import '/utils/api_service.dart';
 import '/utils/task_handler.dart';
 import '/utils/db_helper.dart';
+import '/conf/theme.dart';
+import '/conf/glassbutton.dart';
 
 class ChatScreen extends StatefulWidget {
   final List<Map<String, dynamic>> taskData;
@@ -33,7 +35,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _chatMessages.addAll(messages.map((msg) => ChatMessage.fromMap(msg)));
     });
 
-    // Scroll to the bottom after loading messages
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
@@ -45,7 +46,6 @@ class _ChatScreenState extends State<ChatScreen> {
     if (userMessage.isNotEmpty) {
       final timestamp = DateTime.now().toIso8601String();
 
-      // Add user message
       await _dbHelper.addChatMessage({
         'sender': 'user',
         'message': userMessage,
@@ -56,12 +56,10 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatMessages.add(ChatMessage(sender: 'user', message: userMessage));
       });
 
-      // Scroll to the bottom after user message is added
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
       });
 
-      // Bot reply
       final botReply = await ApiService().fetchChatMessages(userMessage);
       handleTaskOperation(botReply, widget.userName);
 
@@ -76,7 +74,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatMessages.add(ChatMessage(sender: 'bot', message: botMessage));
       });
 
-      // Scroll to the bottom after bot reply is added
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
       });
@@ -98,25 +95,51 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final contentPadding = screenWidth * 0.05;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'OASIS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: screenWidth * 0.05,
-            fontWeight: FontWeight.bold,
+    return Container(
+      decoration: darkGradientBackground,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight + 4),
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                    // gradient: LinearGradient(
+                    //   colors: [
+                    //     Colors.white.withOpacity(0.1),
+                    //     Colors.black.withOpacity(0.5),
+                    //   ],
+                    //   begin: Alignment.topCenter,
+                    //   end: Alignment.bottomCenter,
+                    // ),
+                    // color: Colors.white.withOpacity(0.2), // Semi-transparent background
+                    ),
+                child: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: Text(
+                    'OASIS',
+                    style: TextStyle(
+                      color: darkTextColor,
+                      fontSize: screenWidth * 0.05,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  centerTitle: true,
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: contentPadding),
+                height: 2,
+                color: Colors.white,
+              ),
+            ],
           ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 1,
-      ),
-      body: Container(
-        color: Colors.black,
-        child: Column(
+        body: Column(
           children: [
             Expanded(
               child: _chatMessages.isEmpty
@@ -125,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         'Chat History Here',
                         style: TextStyle(
                           fontSize: screenWidth * 0.04,
-                          color: const Color.fromARGB(255, 71, 71, 72),
+                          color: darkTextColor.withOpacity(0.5),
                         ),
                       ),
                     )
@@ -140,44 +163,66 @@ class _ChatScreenState extends State<ChatScreen> {
                           alignment: isUser
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                          child: Container(
-                            margin: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.005,
-                              horizontal: screenWidth * 0.03,
-                            ),
-                            padding: EdgeInsets.all(screenWidth * 0.03),
-                            decoration: BoxDecoration(
-                              color: isUser
-                                  ? Colors.grey[800]
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: Text(
-                              message.message,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: screenWidth * 0.04,
-                              ),
-                            ),
-                          ),
+                          child: isUser
+                              ? GlassButton(
+                                  blur: 30.0,
+                                  opacity: 0.2,
+                                  radius: 20.0,
+                                  padding: EdgeInsets.all(screenWidth * 0.03),
+                                  margin: EdgeInsets.symmetric(
+                                    vertical:
+                                        MediaQuery.of(context).size.height *
+                                            0.005,
+                                    horizontal: contentPadding,
+                                  ),
+                                  child: Text(
+                                    message.message,
+                                    style: TextStyle(
+                                      color: darkTextColor,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  margin: EdgeInsets.symmetric(
+                                    vertical:
+                                        MediaQuery.of(context).size.height *
+                                            0.005,
+                                    horizontal: contentPadding,
+                                  ),
+                                  padding: EdgeInsets.all(screenWidth * 0.03),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: Text(
+                                    message.message,
+                                    style: TextStyle(
+                                      color: darkTextColor,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                                  ),
+                                ),
                         );
                       },
                     ),
             ),
             Padding(
               padding: EdgeInsets.only(
-                bottom: screenHeight * 0.05,
-                left: screenWidth * 0.02,
-                right: screenWidth * 0.02,
+                bottom: MediaQuery.of(context).size.height *
+                    0.03, // Increased bottom padding
+                top: MediaQuery.of(context).size.height *
+                    0.02, // Added top padding
+                left: contentPadding,
+                right: contentPadding,
               ),
-              child: Container(
+              child: GlassButton(
+                blur: 30.0,
+                opacity: 0.2,
+                radius: 30.0,
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.04,
-                  vertical: screenHeight * 0.01,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(30.0),
+                  vertical: MediaQuery.of(context).size.height * 0.01,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -191,13 +236,13 @@ class _ChatScreenState extends State<ChatScreen> {
                         decoration: InputDecoration(
                           hintText: 'Enter your message',
                           hintStyle: TextStyle(
-                            color: Colors.grey[500],
+                            color: darkTextColor.withOpacity(0.5),
                             fontSize: screenWidth * 0.04,
                           ),
                           border: InputBorder.none,
                         ),
                         style: TextStyle(
-                          color: Colors.white,
+                          color: darkTextColor,
                           fontSize: screenWidth * 0.04,
                         ),
                       ),
@@ -206,10 +251,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.grey[800],
+                        color: darkPrimaryColor,
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.send, color: Colors.white),
+                        icon: Icon(Icons.send, color: darkTextColor),
                         onPressed: _sendMessage,
                       ),
                     ),

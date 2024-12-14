@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 
-// Define Dark Theme Colors
-final Color darkBackgroundColor = Color(0xFF080833);
 final Color darkPrimaryColor = Color(0xFF4A2DB3);
 final Color darkTextColor = Colors.white;
+
+final BoxDecoration darkGradientBackground = BoxDecoration(
+  gradient: LinearGradient(
+    colors: [
+      Color.fromARGB(255, 7, 5, 48), 
+      Colors.black,             
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+);
 
 // Dark Theme Data
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primaryColor: darkPrimaryColor,
-  scaffoldBackgroundColor: darkBackgroundColor,
+  scaffoldBackgroundColor: Colors.transparent, // We'll use a container to apply the gradient
   textTheme: TextTheme(),
   appBarTheme: AppBarTheme(
     backgroundColor: darkPrimaryColor,
