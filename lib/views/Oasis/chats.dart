@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '/models/chat_message.dart';
 import '/utils/api_service.dart';
@@ -5,6 +6,7 @@ import '/utils/task_handler.dart';
 import '/utils/db_helper.dart';
 import '/conf/theme.dart';
 import '/conf/glassbutton.dart';
+import '/conf/frostedglass.dart'; // Importing Glassmorphism widget
 
 class ChatScreen extends StatefulWidget {
   final List<Map<String, dynamic>> taskData;
@@ -23,10 +25,23 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final DBHelper _dbHelper = DBHelper();
 
+  bool _isdoodling = false;
+  String _dots = '';
+  double _opacity = 0.5;
+  Timer? _dotsTimer;
+  Timer? _opacityTimer;
+
   @override
   void initState() {
     super.initState();
     _loadChatMessages();
+  }
+
+  @override
+  void dispose() {
+    _dotsTimer?.cancel();
+    _opacityTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadChatMessages() async {
@@ -40,18 +55,51 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _startdoodlingAnimation() {
+    _isdoodling = true;
+    _dots = ''; // Reset dots
+
+    // Animate dots
+    _dotsTimer = Timer.periodic(Duration(milliseconds: 700), (timer) {
+      setState(() {
+        if (_dots.length < 3) {
+          _dots += '.';
+        } else {
+          _dots = '';
+        }
+      });
+    });
+
+    // Animate fading
+    _opacityTimer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+      setState(() {
+        _opacity = _opacity == 0.5 ? 0.05 : 0.5;
+      });
+    });
+  }
+
+  void _stopdoodlingAnimation() {
+    _dotsTimer?.cancel();
+    _opacityTimer?.cancel();
+    _isdoodling = false;
+    _dots = '';
+    _opacity = 0.5;
+  }
+
   Future<void> _sendMessage() async {
     final userMessage = _messageController.text.trim();
 
     if (userMessage.isNotEmpty) {
       final timestamp = DateTime.now().toIso8601String();
 
+      // Save user message to the database
       await _dbHelper.addChatMessage({
         'sender': 'user',
         'message': userMessage,
         'timestamp': timestamp,
       }, widget.userName);
 
+      // Add user message to the chat list
       setState(() {
         _chatMessages.add(ChatMessage(sender: 'user', message: userMessage));
       });
@@ -60,25 +108,37 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       });
 
-      final botReply = await ApiService().fetchChatMessages(userMessage);
-      handleTaskOperation(botReply, widget.userName);
-
-      final botMessage = botReply["message"];
-      await _dbHelper.addChatMessage({
-        'sender': 'bot',
-        'message': botMessage,
-        'timestamp': DateTime.now().toIso8601String(),
-      }, widget.userName);
+      // Clear the message input
+      _messageController.clear();
 
       setState(() {
-        _chatMessages.add(ChatMessage(sender: 'bot', message: botMessage));
+        _chatMessages.add(ChatMessage(sender: 'bot', message: 'doodling...'));
+        _startdoodlingAnimation();
       });
+
+      // Fetch the bot reply with a delay
+      final botReply = await Future.delayed(
+        Duration(seconds: 5),
+        () => ApiService().fetchChatMessages(userMessage),
+      );
+
+      // Remove "doodling..." and add the bot's actual reply
+      setState(() {
+        _stopdoodlingAnimation();
+        _chatMessages.removeWhere((msg) => msg.sender == 'bot' && msg.message == 'doodling...');
+        _chatMessages.add(ChatMessage(sender: 'bot', message: botReply["message"]));
+      });
+
+      // Save the bot's reply to the database
+      await _dbHelper.addChatMessage({
+        'sender': 'bot',
+        'message': botReply["message"],
+        'timestamp': DateTime.now().toIso8601String(),
+      }, widget.userName);
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
       });
-
-      _messageController.clear();
     }
   }
 
@@ -95,32 +155,28 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     final contentPadding = screenWidth * 0.05;
 
     return Container(
       decoration: darkGradientBackground,
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: Colors.transparent,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight + 4),
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                    // gradient: LinearGradient(
-                    //   colors: [
-                    //     Colors.white.withOpacity(0.1),
-                    //     Colors.black.withOpacity(0.5),
-                    //   ],
-                    //   begin: Alignment.topCenter,
-                    //   end: Alignment.bottomCenter,
-                    // ),
-                    // color: Colors.white.withOpacity(0.2), // Semi-transparent background
-                    ),
-                child: AppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  title: Text(
+          preferredSize: Size.fromHeight(screenHeight * 0.08),
+          child: Glassmorphism(
+            blur: 8.0,
+            opacity: 0.1,
+            radius: 0.0,
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
                     'OASIS',
                     style: TextStyle(
                       color: darkTextColor,
@@ -128,15 +184,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  centerTitle: true,
-                ),
+                ],
               ),
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: contentPadding),
-                height: 2,
-                color: Colors.white,
-              ),
-            ],
+            ),
           ),
         ),
         body: Column(
@@ -170,9 +220,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   radius: 20.0,
                                   padding: EdgeInsets.all(screenWidth * 0.03),
                                   margin: EdgeInsets.symmetric(
-                                    vertical:
-                                        MediaQuery.of(context).size.height *
-                                            0.005,
+                                    vertical: screenHeight * 0.005,
                                     horizontal: contentPadding,
                                   ),
                                   child: Text(
@@ -183,36 +231,58 @@ class _ChatScreenState extends State<ChatScreen> {
                                     ),
                                   ),
                                 )
-                              : Container(
-                                  margin: EdgeInsets.symmetric(
-                                    vertical:
-                                        MediaQuery.of(context).size.height *
-                                            0.005,
-                                    horizontal: contentPadding,
-                                  ),
-                                  padding: EdgeInsets.all(screenWidth * 0.03),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  child: Text(
-                                    message.message,
-                                    style: TextStyle(
-                                      color: darkTextColor,
-                                      fontSize: screenWidth * 0.04,
-                                    ),
-                                  ),
-                                ),
+                              : (message.message == 'doodling...'
+                                  ? AnimatedOpacity(
+                                      opacity: _opacity,
+                                      duration: Duration(milliseconds: 1000),
+                                      child: Container(
+                                        margin: EdgeInsets.symmetric(
+                                          vertical: screenHeight * 0.005,
+                                          horizontal: contentPadding,
+                                        ),
+                                        padding:
+                                            EdgeInsets.all(screenWidth * 0.03),
+                                        decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                        child: Text(
+                                          'doodling$_dots',
+                                          style: TextStyle(
+                                            color: darkTextColor,
+                                            fontSize: screenWidth * 0.04,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      margin: EdgeInsets.symmetric(
+                                        vertical: screenHeight * 0.005,
+                                        horizontal: contentPadding,
+                                      ),
+                                      padding:
+                                          EdgeInsets.all(screenWidth * 0.03),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      child: Text(
+                                        message.message,
+                                        style: TextStyle(
+                                          color: darkTextColor,
+                                          fontSize: screenWidth * 0.04,
+                                        ),
+                                      ),
+                                    )),
                         );
                       },
                     ),
             ),
             Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height *
-                    0.03, // Increased bottom padding
-                top: MediaQuery.of(context).size.height *
-                    0.02, // Added top padding
+                bottom: screenHeight * 0.03,
+                top: screenHeight * 0.02,
                 left: contentPadding,
                 right: contentPadding,
               ),
@@ -222,7 +292,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 radius: 30.0,
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.04,
-                  vertical: MediaQuery.of(context).size.height * 0.01,
+                  vertical: screenHeight * 0.01,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,

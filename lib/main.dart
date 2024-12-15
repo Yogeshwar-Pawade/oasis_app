@@ -1,4 +1,4 @@
-import 'dart:ui'; // Required for BackdropFilter
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'utils/api_service.dart';
@@ -72,6 +72,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     if (_userName == null) {
       return Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -89,13 +92,12 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Glassmorphism(
         blur: 80.0,
         opacity: 0.4,
-        radius: 30.0, // Rounded corners
+        radius: 30.0,
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical:
-                MediaQuery.of(context).size.height * 0.015, // Reduced padding
+            vertical: screenHeight * 0.015,
           ),
-          height: MediaQuery.of(context).size.height * 0.1, // Reduced height
+          height: screenHeight * 0.1,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -105,8 +107,7 @@ class _MainScreenState extends State<MainScreen> {
                 context: context,
               ),
               SizedBox(
-                width:
-                    MediaQuery.of(context).size.width * 0.06, // Reduced spacing
+                width: screenWidth * 0.06,
               ),
               _buildNavBarButton(
                 label: "Flash",
@@ -126,17 +127,17 @@ class _MainScreenState extends State<MainScreen> {
     required BuildContext context,
   }) {
     final isSelected = _currentIndex == index;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    final double buttonWidth =
-        MediaQuery.of(context).size.width * (isSelected ? 0.40 : 0.25);
-    final double buttonheight =
-        MediaQuery.of(context).size.height * (isSelected ? 0.08 : 0.06);
+    final double buttonWidth = screenWidth * (isSelected ? 0.40 : 0.25);
+    final double buttonHeight = screenHeight * (isSelected ? 0.08 : 0.06);
 
     return AnimatedContainer(
       duration: Duration(milliseconds: 100),
       curve: Curves.easeInOut,
       width: buttonWidth,
-      height: buttonheight,
+      height: buttonHeight,
       child: GestureDetector(
         onTap: () {
           setState(() {
@@ -145,26 +146,27 @@ class _MainScreenState extends State<MainScreen> {
         },
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.height * 0.002,
-            horizontal: MediaQuery.of(context).size.width * 0.02,
+            vertical: screenHeight * 0.002,
+            horizontal: screenWidth * 0.02,
           ),
           margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.01,
+            bottom: screenHeight * 0.01,
           ),
           decoration: BoxDecoration(
-              border:
-                  Border.all(width: 1, color: Colors.white.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(18),
-              color: isSelected
-                  ? darkPrimaryColor // Solid primary color for selected button
-                  // : const Color.fromARGB(255, 58, 58, 58), // Solid light gray for unselected button
-                  : Colors.transparent),
+            border: isSelected
+                ? null // No border when selected
+                : Border.all(width: 1, color: Colors.white.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(18),
+            color: isSelected
+                ? darkPrimaryColor
+                : Colors.transparent,
+          ),
           child: Center(
             child: Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white, // Text color
-                fontSize: isSelected ? 16 : 14, // Font size
+                color: Colors.white,
+                fontSize: isSelected ? screenHeight * 0.02 : screenHeight * 0.018,
                 fontWeight: FontWeight.bold,
               ),
             ),
