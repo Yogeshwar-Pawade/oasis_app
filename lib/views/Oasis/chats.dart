@@ -167,24 +167,27 @@ class _ChatScreenState extends State<ChatScreen> {
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(screenHeight * 0.08),
           child: Glassmorphism(
-            blur: 8.0,
-            opacity: 0.1,
+            blur: 11.0,
+            opacity: 0.3,
             radius: 0.0,
             child: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(
-                    'OASIS',
-                    style: TextStyle(
-                      color: darkTextColor,
-                      fontSize: screenWidth * 0.05,
-                      fontWeight: FontWeight.bold,
+              title: Padding(
+                padding: const EdgeInsets.all(13.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'OASIS',
+                      style: TextStyle(
+                        color: darkTextColor,
+                        fontSize: screenWidth * 0.05,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
