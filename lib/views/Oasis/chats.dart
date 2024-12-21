@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '/conf/appbar.dart'; // Import the custom AppBar
 import '/models/chat_message.dart';
 import '/utils/api_service.dart';
 import '/utils/task_handler.dart';
 import '/utils/db_helper.dart';
 import '/conf/theme.dart';
 import '/conf/glassbutton.dart';
-import '/conf/frostedglass.dart'; // Importing Glassmorphism widget
 
 class ChatScreen extends StatefulWidget {
   final List<Map<String, dynamic>> taskData;
@@ -57,9 +57,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startdoodlingAnimation() {
     _isdoodling = true;
-    _dots = ''; // Reset dots
+    _dots = '';
 
-    // Animate dots
     _dotsTimer = Timer.periodic(Duration(milliseconds: 700), (timer) {
       setState(() {
         if (_dots.length < 3) {
@@ -70,7 +69,6 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     });
 
-    // Animate fading
     _opacityTimer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
       setState(() {
         _opacity = _opacity == 0.5 ? 0.05 : 0.5;
@@ -92,14 +90,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (userMessage.isNotEmpty) {
       final timestamp = DateTime.now().toIso8601String();
 
-      // Save user message to the database
       await _dbHelper.addChatMessage({
         'sender': 'user',
         'message': userMessage,
         'timestamp': timestamp,
       }, widget.userName);
 
-      // Add user message to the chat list
       setState(() {
         _chatMessages.add(ChatMessage(sender: 'user', message: userMessage));
       });
@@ -108,7 +104,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       });
 
-      // Clear the message input
       _messageController.clear();
 
       setState(() {
@@ -116,20 +111,17 @@ class _ChatScreenState extends State<ChatScreen> {
         _startdoodlingAnimation();
       });
 
-      // Fetch the bot reply with a delay
       final botReply = await Future.delayed(
         Duration(seconds: 5),
         () => ApiService().fetchChatMessages(userMessage),
       );
 
-      // Remove "doodling..." and add the bot's actual reply
       setState(() {
         _stopdoodlingAnimation();
         _chatMessages.removeWhere((msg) => msg.sender == 'bot' && msg.message == 'doodling...');
         _chatMessages.add(ChatMessage(sender: 'bot', message: botReply["message"]));
       });
 
-      // Save the bot's reply to the database
       await _dbHelper.addChatMessage({
         'sender': 'bot',
         'message': botReply["message"],
@@ -164,34 +156,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         backgroundColor: Colors.transparent,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(screenHeight * 0.08),
-          child: Glassmorphism(
-            blur: 11.0,
-            opacity: 0.3,
-            radius: 0.0,
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: Padding(
-                padding: const EdgeInsets.all(13.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'OASIS',
-                      style: TextStyle(
-                        color: darkTextColor,
-                        fontSize: screenWidth * 0.05,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        appBar: CustomAppBar(title: 'Oasis'), // Call the custom AppBar
         body: Column(
           children: [
             Expanded(
@@ -234,50 +199,24 @@ class _ChatScreenState extends State<ChatScreen> {
                                     ),
                                   ),
                                 )
-                              : (message.message == 'doodling...'
-                                  ? AnimatedOpacity(
-                                      opacity: _opacity,
-                                      duration: Duration(milliseconds: 1000),
-                                      child: Container(
-                                        margin: EdgeInsets.symmetric(
-                                          vertical: screenHeight * 0.005,
-                                          horizontal: contentPadding,
-                                        ),
-                                        padding:
-                                            EdgeInsets.all(screenWidth * 0.03),
-                                        decoration: BoxDecoration(
-                                          color: Colors.transparent,
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                        ),
-                                        child: Text(
-                                          'doodling$_dots',
-                                          style: TextStyle(
-                                            color: darkTextColor,
-                                            fontSize: screenWidth * 0.04,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
-                                      margin: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.005,
-                                        horizontal: contentPadding,
-                                      ),
-                                      padding:
-                                          EdgeInsets.all(screenWidth * 0.03),
-                                      decoration: BoxDecoration(
-                                        color: Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      child: Text(
-                                        message.message,
-                                        style: TextStyle(
-                                          color: darkTextColor,
-                                          fontSize: screenWidth * 0.04,
-                                        ),
-                                      ),
-                                    )),
+                              : Container(
+                                  margin: EdgeInsets.symmetric(
+                                    vertical: screenHeight * 0.005,
+                                    horizontal: contentPadding,
+                                  ),
+                                  padding: EdgeInsets.all(screenWidth * 0.03),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: Text(
+                                    message.message,
+                                    style: TextStyle(
+                                      color: darkTextColor,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                                  ),
+                                ),
                         );
                       },
                     ),
