@@ -1,12 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import '/conf/appbar.dart'; // Import the custom AppBar
-import '/models/chat_message.dart';
-import '/utils/api_service.dart';
-import '/utils/task_handler.dart';
-import '/utils/db_helper.dart';
-import '/conf/theme.dart';
-import '/conf/glassbutton.dart';
+import '../../models/chat_message.dart';
+import '../../utils/api_service.dart';
+import '../../utils/task_handler.dart';
+import '../../utils/db_helper.dart';
+import '../../conf/glassbutton.dart';
+import '../../conf/theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final List<Map<String, dynamic>> taskData;
@@ -25,23 +23,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final DBHelper _dbHelper = DBHelper();
 
-  bool _isdoodling = false;
-  String _dots = '';
-  double _opacity = 0.5;
-  Timer? _dotsTimer;
-  Timer? _opacityTimer;
-
   @override
   void initState() {
     super.initState();
     _loadChatMessages();
-  }
-
-  @override
-  void dispose() {
-    _dotsTimer?.cancel();
-    _opacityTimer?.cancel();
-    super.dispose();
   }
 
   Future<void> _loadChatMessages() async {
@@ -50,38 +35,10 @@ class _ChatScreenState extends State<ChatScreen> {
       _chatMessages.addAll(messages.map((msg) => ChatMessage.fromMap(msg)));
     });
 
+    // Scroll to the bottom after loading messages
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
-  }
-
-  void _startdoodlingAnimation() {
-    _isdoodling = true;
-    _dots = '';
-
-    _dotsTimer = Timer.periodic(Duration(milliseconds: 700), (timer) {
-      setState(() {
-        if (_dots.length < 3) {
-          _dots += '.';
-        } else {
-          _dots = '';
-        }
-      });
-    });
-
-    _opacityTimer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
-      setState(() {
-        _opacity = _opacity == 0.5 ? 0.05 : 0.5;
-      });
-    });
-  }
-
-  void _stopdoodlingAnimation() {
-    _dotsTimer?.cancel();
-    _opacityTimer?.cancel();
-    _isdoodling = false;
-    _dots = '';
-    _opacity = 0.5;
   }
 
   Future<void> _sendMessage() async {
@@ -90,6 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (userMessage.isNotEmpty) {
       final timestamp = DateTime.now().toIso8601String();
 
+      // Add user message
       await _dbHelper.addChatMessage({
         'sender': 'user',
         'message': userMessage,
@@ -100,37 +58,32 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatMessages.add(ChatMessage(sender: 'user', message: userMessage));
       });
 
+      // Scroll to the bottom after user message is added
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+
+      // Bot reply
+      final botReply = await ApiService().fetchChatMessages(userMessage);
+      handleTaskOperation(botReply, widget.userName);
+
+      final botMessage = botReply["message"];
+      await _dbHelper.addChatMessage({
+        'sender': 'bot',
+        'message': botMessage,
+        'timestamp': DateTime.now().toIso8601String(),
+      }, widget.userName);
+
+      setState(() {
+        _chatMessages.add(ChatMessage(sender: 'bot', message: botMessage));
+      });
+
+      // Scroll to the bottom after bot reply is added
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
       });
 
       _messageController.clear();
-
-      setState(() {
-        _chatMessages.add(ChatMessage(sender: 'bot', message: 'doodling...'));
-        _startdoodlingAnimation();
-      });
-
-      final botReply = await Future.delayed(
-        Duration(seconds: 5),
-        () => ApiService().fetchChatMessages(userMessage),
-      );
-
-      setState(() {
-        _stopdoodlingAnimation();
-        _chatMessages.removeWhere((msg) => msg.sender == 'bot' && msg.message == 'doodling...');
-        _chatMessages.add(ChatMessage(sender: 'bot', message: botReply["message"]));
-      });
-
-      await _dbHelper.addChatMessage({
-        'sender': 'bot',
-        'message': botReply["message"],
-        'timestamp': DateTime.now().toIso8601String(),
-      }, widget.userName);
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-      });
     }
   }
 
@@ -151,12 +104,27 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final contentPadding = screenWidth * 0.05;
 
+    final textColor =
+        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
+
     return Container(
-      decoration: darkGradientBackground,
+      decoration: getGradientBackground(Theme.of(context).brightness),
       child: Scaffold(
         extendBodyBehindAppBar: true,
         backgroundColor: Colors.transparent,
-        appBar: CustomAppBar(title: 'Oasis'), // Call the custom AppBar
+        appBar: AppBar(
+          title: Text(
+            'Oasis',
+            style: TextStyle(
+              color: textColor,
+              fontSize: screenWidth * 0.05,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Theme.of(context).primaryColor,
+          elevation: 1,
+          centerTitle: false, // Align title to the left
+        ),
         body: Column(
           children: [
             Expanded(
@@ -166,7 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         'Chat History Here',
                         style: TextStyle(
                           fontSize: screenWidth * 0.04,
-                          color: darkTextColor.withOpacity(0.5),
+                          color: textColor.withOpacity(0.5),
                         ),
                       ),
                     )
@@ -194,7 +162,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Text(
                                     message.message,
                                     style: TextStyle(
-                                      color: darkTextColor,
+                                      color: textColor,
                                       fontSize: screenWidth * 0.04,
                                     ),
                                   ),
@@ -212,7 +180,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Text(
                                     message.message,
                                     style: TextStyle(
-                                      color: darkTextColor,
+                                      color: textColor,
                                       fontSize: screenWidth * 0.04,
                                     ),
                                   ),
@@ -248,13 +216,13 @@ class _ChatScreenState extends State<ChatScreen> {
                         decoration: InputDecoration(
                           hintText: 'Enter your message',
                           hintStyle: TextStyle(
-                            color: darkTextColor.withOpacity(0.5),
+                            color: textColor.withOpacity(0.5),
                             fontSize: screenWidth * 0.04,
                           ),
                           border: InputBorder.none,
                         ),
                         style: TextStyle(
-                          color: darkTextColor,
+                          color: textColor,
                           fontSize: screenWidth * 0.04,
                         ),
                       ),
@@ -263,10 +231,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: darkPrimaryColor,
+                        color: Theme.of(context).primaryColor,
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.send, color: darkTextColor),
+                        icon: Icon(Icons.send, color: textColor),
                         onPressed: _sendMessage,
                       ),
                     ),

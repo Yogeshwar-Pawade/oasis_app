@@ -1,14 +1,14 @@
-import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'utils/api_service.dart';
-import './views/Oasis/chats.dart';
-import './views/Flash/tasks.dart';
+import 'views/oasis/viewchat.dart';
+import 'views/flash/view_taskdetails.dart';
+import 'views/flash/viewprofile.dart';
 import 'views/login_screen.dart';
 import 'views/signup_screen.dart';
 import 'utils/session_manager.dart';
-import '/conf/theme.dart';
 import 'conf/frostedglass.dart';
+import 'conf/theme.dart'; // Import the theme file
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,14 +21,24 @@ class MyApp extends StatelessWidget {
 
   MyApp({required this.isLoggedIn});
 
+  // Global theme notifier
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Task Management App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: isLoggedIn ? MainScreen() : LoginScreen(),
-      routes: {
-        '/signup': (context) => SignupScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, currentTheme, child) {
+        return MaterialApp(
+          title: 'Task Management App',
+          theme: lightTheme, // Light theme
+          darkTheme: darkTheme, // Dark theme
+          themeMode: currentTheme, // Use the current theme
+          home: isLoggedIn ? MainScreen() : LoginScreen(),
+          routes: {
+            '/signup': (context) => SignupScreen(),
+          },
+        );
       },
     );
   }
@@ -54,6 +64,8 @@ class _MainScreenState extends State<MainScreen> {
   void _fetchUserDetails() async {
     try {
       final userdetails = await _apiService.getUserProfile();
+
+      // Update state with user details
       setState(() {
         _userName = userdetails['name'] ?? 'Unknown User';
         _userEmail = userdetails['email'] ?? 'No Email Provided';
@@ -72,49 +84,53 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
     if (_userName == null) {
+      // Show a loading indicator while fetching user details
       return Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    final height = MediaQuery.of(context).size.height;
     final List<Widget> _screens = [
       ChatScreen(taskData: [], userName: _userName ?? 'Unknown User Name'),
-      TaskDetailsScreen(username: _userName ?? 'Unknown User'),
+      ProfileScreen(),
     ];
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: _screens[_currentIndex],
-      bottomNavigationBar: Glassmorphism(
-        blur: 80.0,
-        opacity: 0.4,
-        radius: 30.0,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: screenHeight * 0.015,
-          ),
-          height: screenHeight * 0.1,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildNavBarButton(
-                label: "Oasis",
-                index: 0,
-                context: context,
-              ),
-              SizedBox(
-                width: screenWidth * 0.06,
-              ),
-              _buildNavBarButton(
-                label: "Flash",
-                index: 1,
-                context: context,
-              ),
-            ],
+    return Container(
+      decoration: getGradientBackground(Theme.of(context).brightness),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: _screens[_currentIndex],
+        bottomNavigationBar: Glassmorphism(
+          blur: 40.0,
+          opacity: 0.4,
+          radius: 30.0,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              vertical: height * 0.015,
+            ),
+            height: height * 0.1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildNavBarButton(
+                  label: "Oasis",
+                  index: 0,
+                  icon: Icons.chat,
+                  context: context,
+                ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.06,
+                ),
+                _buildNavBarButton(
+                  label: "Flash",
+                  index: 1,
+                  icon: Icons.person,
+                  context: context,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -124,6 +140,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavBarButton({
     required String label,
     required int index,
+    required IconData icon,
     required BuildContext context,
   }) {
     final isSelected = _currentIndex == index;
@@ -158,18 +175,30 @@ class _MainScreenState extends State<MainScreen> {
                 : Border.all(width: 1, color: Colors.white.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(18),
             color: isSelected
-                ? darkPrimaryColor
+                ? const Color(0xFF1C1C1E) // Selected background color
                 : Colors.transparent,
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
                 color: Colors.white,
-                fontSize: isSelected ? screenHeight * 0.02 : screenHeight * 0.018,
-                fontWeight: FontWeight.bold,
+                size: screenHeight * 0.025,
               ),
-            ),
+              if (isSelected) ...[
+                SizedBox(width: screenWidth * 0.02),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize:
+                        isSelected ? screenHeight * 0.02 : screenHeight * 0.018,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

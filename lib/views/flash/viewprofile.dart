@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '/models/user_profile.dart';
-import '/utils/api_service.dart';
-import '/utils/db_helper.dart';
-import '/utils/session_manager.dart';
+import '../../models/user_profile.dart';
+import '../../utils/api_service.dart';
+import '../../utils/db_helper.dart';
+import '../../utils/session_manager.dart';
 import '../login_screen.dart';
+import '../../main.dart'; // Import for themeNotifier
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -15,7 +16,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final DBHelper _dbHelper = DBHelper();
   final _apiService = ApiService();
-  bool _isDarkModeEnabled = false; // Tracks the state of the Dark Mode toggle
   UserProfile? _userProfile;
   bool _isLoading = true;
 
@@ -47,12 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  void _toggleDarkMode(bool value) {
-    setState(() {
-      _isDarkModeEnabled = value;
-    });
   }
 
   void _clearData() async {
@@ -106,14 +100,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final containerColor = const Color(0xFF1C1C1E);
+    final textColor =
+        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: Colors.orange,
+                color: Theme.of(context).primaryColor,
               ),
             )
           : SingleChildScrollView(
@@ -128,12 +123,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Container(
                           height: 280,
                           width: double.infinity,
-                          color: containerColor,
+                          color: Theme.of(context).primaryColor,
                           child: Center(
                             child: Text(
                               'OASIS',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: textColor,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -151,15 +146,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white,
+                                color: Theme.of(context).primaryColor,
                                 width: 5,
                               ),
                             ),
                             child: CircleAvatar(
                               radius: 75,
-                              backgroundColor: const Color(0xFF1C1C1E),
+                              backgroundColor:
+                                  Theme.of(context).scaffoldBackgroundColor,
                               child: Icon(Icons.person,
-                                  size: 80, color: Colors.black),
+                                  size: 80,
+                                  color: Theme.of(context).primaryColor),
                             ),
                           ),
                         ),
@@ -174,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   SizedBox(height: 20),
@@ -185,22 +182,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   SizedBox(height: 40),
+
+                  // Theme Toggle
+                  ListTile(
+                    leading: Icon(
+                      MyApp.themeNotifier.value == ThemeMode.dark
+                          ? Icons.dark_mode
+                          : Icons.light_mode,
+                      color: textColor,
+                    ),
+                    title: Text(
+                      MyApp.themeNotifier.value == ThemeMode.dark
+                          ? 'Dark Mode'
+                          : 'Light Mode',
+                      style: TextStyle(color: textColor),
+                    ),
+                    trailing: Switch(
+                      value: MyApp.themeNotifier.value == ThemeMode.dark,
+                      onChanged: (value) {
+                        setState(() {
+                          MyApp.themeNotifier.value =
+                              value ? ThemeMode.dark : ThemeMode.light;
+                        });
+                      },
+                    ),
+                  ),
 
                   // Clear Data Option
                   ListTile(
                     leading: Icon(Icons.delete_forever, color: Colors.red),
                     title: Text('Clear Data',
-                        style: TextStyle(color: Colors.white)),
+                        style: TextStyle(color: textColor)),
                     onTap: _clearData,
                   ),
                   ListTile(
                     leading: Icon(Icons.lock, color: Colors.red),
-                    title:
-                        Text('Logout', style: TextStyle(color: Colors.white)),
+                    title: Text('Logout', style: TextStyle(color: textColor)),
                     onTap: _logout,
                   ),
                   SizedBox(height: 50),
@@ -211,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                   SizedBox(height: 8),
