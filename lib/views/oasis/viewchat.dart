@@ -4,7 +4,11 @@ import '../../utils/api_service.dart';
 import '../../utils/task_handler.dart';
 import '../../utils/db_helper.dart';
 import '../../conf/glassbutton.dart';
+import '../../conf/glassbuttonwhite.dart'; // Import the white theme button
 import '../../conf/theme.dart';
+
+// Define global horizontal padding
+const double horizontalPadding = 10.0;
 
 class ChatScreen extends StatefulWidget {
   final List<Map<String, dynamic>> taskData;
@@ -97,12 +101,35 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Widget _buildGlassButton({
+    required double blur,
+    required double opacity,
+    required double radius,
+    required EdgeInsetsGeometry padding,
+    required Widget child,
+  }) {
+    // Switch between light and dark mode glass button
+    return Theme.of(context).brightness == Brightness.dark
+        ? GlassButton(
+            blur: blur,
+            opacity: opacity,
+            radius: radius,
+            padding: padding,
+            child: child,
+          )
+        : GlassButtonWhiteTheme(
+            blur: blur,
+            opacity: opacity,
+            radius: radius,
+            padding: padding,
+            child: child,
+          );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    final contentPadding = screenWidth * 0.05;
 
     final textColor =
         Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
@@ -110,20 +137,21 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       decoration: getGradientBackground(Theme.of(context).brightness),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: Text(
-            'Oasis',
-            style: TextStyle(
-              color: textColor,
-              fontSize: screenWidth * 0.05,
-              fontWeight: FontWeight.bold,
+          forceMaterialTransparency: true,
+          title: Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Text(
+              'Oasis',
+              style: TextStyle(
+                color: textColor,
+                fontSize: screenWidth * 0.06,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          backgroundColor: Theme.of(context).primaryColor,
           elevation: 1,
-          centerTitle: false, // Align title to the left
+          centerTitle: false,
         ),
         body: Column(
           children: [
@@ -149,54 +177,52 @@ class _ChatScreenState extends State<ChatScreen> {
                           alignment: isUser
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                          child: isUser
-                              ? GlassButton(
-                                  blur: 30.0,
-                                  opacity: 0.2,
-                                  radius: 20.0,
-                                  padding: EdgeInsets.all(screenWidth * 0.03),
-                                  margin: EdgeInsets.symmetric(
-                                    vertical: screenHeight * 0.005,
-                                    horizontal: contentPadding,
-                                  ),
-                                  child: Text(
-                                    message.message,
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: screenWidth * 0.04,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.005,
+                              horizontal: horizontalPadding,
+                            ),
+                            child: isUser
+                                ? _buildGlassButton(
+                                    blur: 30.0,
+                                    opacity: 0.2,
+                                    radius: 20.0,
+                                    padding: EdgeInsets.all(screenWidth * 0.03),
+                                    child: Text(
+                                      message.message,
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: screenWidth * 0.04,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    padding: EdgeInsets.all(screenWidth * 0.03),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    child: Text(
+                                      message.message,
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: screenWidth * 0.04,
+                                      ),
                                     ),
                                   ),
-                                )
-                              : Container(
-                                  margin: EdgeInsets.symmetric(
-                                    vertical: screenHeight * 0.005,
-                                    horizontal: contentPadding,
-                                  ),
-                                  padding: EdgeInsets.all(screenWidth * 0.03),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  child: Text(
-                                    message.message,
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: screenWidth * 0.04,
-                                    ),
-                                  ),
-                                ),
+                          ),
                         );
                       },
                     ),
             ),
             Padding(
               padding: EdgeInsets.only(
-                bottom: screenHeight * 0.03,
-                top: screenHeight * 0.02,
-                left: contentPadding,
-                right: contentPadding,
+                bottom: screenHeight * 0.01,
+                top: screenHeight * 0.01,
+                left: horizontalPadding,
+                right: horizontalPadding,
               ),
-              child: GlassButton(
+              child: _buildGlassButton(
                 blur: 30.0,
                 opacity: 0.2,
                 radius: 30.0,

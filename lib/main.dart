@@ -7,7 +7,6 @@ import 'views/flash/viewprofile.dart';
 import 'views/login_screen.dart';
 import 'views/signup_screen.dart';
 import 'utils/session_manager.dart';
-import 'conf/frostedglass.dart';
 import 'conf/theme.dart'; // Import the theme file
 
 void main() async {
@@ -22,7 +21,8 @@ class MyApp extends StatelessWidget {
   MyApp({required this.isLoggedIn});
 
   // Global theme notifier
-  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+  static final ValueNotifier<ThemeMode> themeNotifier =
+      ValueNotifier(ThemeMode.light);
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +82,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  @override
   Widget build(BuildContext context) {
     if (_userName == null) {
       // Show a loading indicator while fetching user details
@@ -92,116 +91,130 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     final height = MediaQuery.of(context).size.height;
+    final brightness = Theme.of(context).brightness; // Defined brightness here
+    final Color navBarColor =
+        brightness == Brightness.dark ? darkPrimaryColor : lightPrimaryColor;
+    final Color navBarTextColor =
+        brightness == Brightness.dark ? darkTextColor : lightTextColor;
+
     final List<Widget> _screens = [
       ChatScreen(taskData: [], userName: _userName ?? 'Unknown User Name'),
       ProfileScreen(),
     ];
 
     return Container(
-      decoration: getGradientBackground(Theme.of(context).brightness),
+      decoration: getGradientBackground(brightness),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: _screens[_currentIndex],
-        bottomNavigationBar: Glassmorphism(
-          blur: 40.0,
-          opacity: 0.4,
-          radius: 30.0,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              vertical: height * 0.015,
-            ),
-            height: height * 0.1,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildNavBarButton(
-                  label: "Oasis",
-                  index: 0,
-                  icon: Icons.chat,
-                  context: context,
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.06,
-                ),
-                _buildNavBarButton(
-                  label: "Flash",
-                  index: 1,
-                  icon: Icons.person,
-                  context: context,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavBarButton({
-    required String label,
-    required int index,
-    required IconData icon,
-    required BuildContext context,
-  }) {
-    final isSelected = _currentIndex == index;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    final double buttonWidth = screenWidth * (isSelected ? 0.40 : 0.25);
-    final double buttonHeight = screenHeight * (isSelected ? 0.08 : 0.06);
-
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 100),
-      curve: Curves.easeInOut,
-      width: buttonWidth,
-      height: buttonHeight,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        child: Container(
+        bottomNavigationBar: Container(
+          color: navBarColor, // Dynamic background color
           padding: EdgeInsets.symmetric(
-            vertical: screenHeight * 0.002,
-            horizontal: screenWidth * 0.02,
+            vertical: height * 0.015,
           ),
-          margin: EdgeInsets.only(
-            bottom: screenHeight * 0.01,
-          ),
-          decoration: BoxDecoration(
-            border: isSelected
-                ? null // No border when selected
-                : Border.all(width: 1, color: Colors.white.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(18),
-            color: isSelected
-                ? const Color(0xFF1C1C1E) // Selected background color
-                : Colors.transparent,
-          ),
+          height: height * 0.1,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: screenHeight * 0.025,
+              _buildNavBarButton(
+                label: "Oasis",
+                index: 0,
+                icon: Icons.chat, // Chat icon for Oasis
+                context: context,
+                textColor: navBarTextColor,
+                brightness: brightness, // Pass brightness here
               ),
-              if (isSelected) ...[
-                SizedBox(width: screenWidth * 0.02),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize:
-                        isSelected ? screenHeight * 0.02 : screenHeight * 0.018,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.06,
+              ),
+              _buildNavBarButton(
+                label: "Flash",
+                index: 1,
+                icon: Icons.bolt, // Lightning icon for Flash
+                context: context,
+                textColor: navBarTextColor,
+                brightness: brightness, // Pass brightness here
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+Widget _buildNavBarButton({
+  required String label,
+  required int index,
+  required IconData icon,
+  required BuildContext context,
+  required Color textColor,
+  required Brightness brightness, // Accept brightness as a parameter
+}) {
+  final isSelected = _currentIndex == index;
+  final screenWidth = MediaQuery.of(context).size.width;
+  final screenHeight = MediaQuery.of(context).size.height;
+
+  final double buttonWidth = screenWidth * (isSelected ? 0.40 : 0.25);
+  final double buttonHeight = screenHeight * (isSelected ? 0.08 : 0.06);
+
+  return AnimatedContainer(
+    duration: Duration(milliseconds: 100),
+    curve: Curves.easeInOut,
+    width: buttonWidth,
+    height: buttonHeight,
+    child: GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: screenHeight * 0.002,
+          horizontal: screenWidth * 0.02,
+        ),
+        margin: EdgeInsets.only(
+          bottom: screenHeight * 0.01,
+        ),
+        decoration: BoxDecoration(
+          border: isSelected
+              ? null // No border when selected
+              : Border.all(width: 1, color: textColor.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(18),
+          color: isSelected
+              ? (brightness == Brightness.dark
+                  ? Color.fromARGB(255, 19, 20, 21) // Dark mode selected
+                  : Color.fromARGB(255, 243, 242, 242)) // Light mode selected
+              : (brightness == Brightness.dark
+                  ? Colors.black // Dark mode not selected
+                  : Colors.transparent), // Light mode not selected
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected
+                  ? textColor // White text for selected
+                  : Colors.grey, // Grey text for not selected
+              size: screenHeight * 0.025,
+            ),
+            if (isSelected) ...[
+              SizedBox(width: screenWidth * 0.02),
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize:
+                      isSelected ? screenHeight * 0.02 : screenHeight * 0.018,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

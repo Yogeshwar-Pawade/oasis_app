@@ -1,16 +1,16 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class GlassButton extends StatelessWidget {
+class GlassButtonWhiteTheme extends StatelessWidget {
   final double blur;
   final double opacity;
   final double radius;
   final Widget child;
-  final EdgeInsetsGeometry? padding; // Optional padding for content
-  final EdgeInsetsGeometry? margin; // Optional margin for external spacing
-  final BoxBorder? border; // Optional border customization
+  final EdgeInsetsGeometry? padding; 
+  final EdgeInsetsGeometry? margin; 
+  final BoxBorder? border; 
 
-  const GlassButton({
+  const GlassButtonWhiteTheme({
     Key? key,
     required this.blur,
     required this.opacity,
@@ -33,19 +33,26 @@ class GlassButton extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: RadialGradient(
               colors: [
-                Colors.white.withOpacity(opacity),
-                Colors.transparent,
+                Colors.grey.withOpacity(opacity), // Subtle grey
+                const Color.fromARGB(255, 184, 182, 182).withOpacity(opacity * 0.4), // Slightly more transparent
               ],
-              stops: [0.0, 1.0],
+              stops: [0.3, 1],
               center: Alignment.topLeft,
-              radius: 2,
+              radius: 1,
             ),
             border: border ??
                 Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.grey.withOpacity(0.2),
                   width: 1.5,
                 ),
             borderRadius: BorderRadius.circular(radius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03), // Light shadow for depth
+                blurRadius: 6,
+                offset: Offset(2, 2),
+              ),
+            ],
           ),
           child: child,
         ),
